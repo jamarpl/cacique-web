@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { CalendarCheck, PackageCheck, Truck } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { WarehouseTreemap } from "@/components/charts/warehouse-treemap";
+import { WarehouseUtilizationBars } from "@/components/dashboard/warehouse-utilization-bars";
+import { RecentActivity } from "@/components/dashboard/recent-activity";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { analyticsApi, deliveriesApi } from "@/lib/api";
 import type { DeliverySummary, WarehouseUtilizationEntry } from "@/lib/api";
@@ -104,19 +105,20 @@ export default function AdminDashboardPage() {
         />
       </div>
 
+      <RecentActivity />
+
       <Card>
         <CardHeader>
           <CardTitle>Warehouse distribution</CardTitle>
           <CardDescription>
-            Each tile is a warehouse, sized by current stored weight and colored by utilization (light =
-            low, dark = high).
+            Busiest warehouses by stored weight, colored by utilization (light = low, dark = high).
           </CardDescription>
         </CardHeader>
         <CardContent>
           {utilizationLoading && utilization.length === 0 ? (
-            <Skeleton className="h-80 w-full" />
+            <Skeleton className="h-64 w-full" />
           ) : (
-            <WarehouseTreemap data={utilization} />
+            <WarehouseUtilizationBars data={utilization} />
           )}
         </CardContent>
       </Card>

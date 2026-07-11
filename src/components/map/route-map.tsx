@@ -35,6 +35,31 @@ function colorForIndex(index: number): string {
   return VEHICLE_COLORS[index % VEHICLE_COLORS.length];
 }
 
+/** Numbered pin (1, 2, 3...) for a stop, in visit order — color matches the trip's polyline. */
+function numberedStopIcon(number: number, color: string): L.DivIcon {
+  return L.divIcon({
+    className: "",
+    html: `<div style="
+      background:${color};
+      color:#fff;
+      width:22px;
+      height:22px;
+      border-radius:9999px;
+      border:2px solid #fff;
+      box-shadow:0 1px 3px rgba(0,0,0,0.4);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:11px;
+      font-weight:600;
+      font-family:system-ui,sans-serif;
+    ">${number}</div>`,
+    iconSize: [22, 22],
+    iconAnchor: [11, 11],
+    popupAnchor: [0, -11],
+  });
+}
+
 interface FitBoundsProps {
   points: [number, number][];
 }
@@ -61,6 +86,8 @@ export interface RouteMapProps {
   unfulfilledOrders?: UnfulfilledOrder[];
   /** When set, only this vehicle's trips are drawn (used by the driver page). */
   focusVehicleId?: string;
+  /** When set (alongside focusVehicleId), only this one trip is drawn — used by the driver page's trip click. */
+  focusTripNumber?: number;
   className?: string;
 }
 
@@ -72,11 +99,18 @@ export interface RouteMapProps {
  * to a straight line through the stops in order when it isn't (no Mapbox
  * token, a stop never resolved coordinates, or the request failed).
  */
-export default function RouteMap({ routes, unfulfilledOrders = [], focusVehicleId, className }: RouteMapProps) {
-  const visibleRoutes = useMemo(
-    () => (focusVehicleId ? routes.filter((r) => r.vehicleId === focusVehicleId) : routes),
-    [routes, focusVehicleId],
-  );
+export default function RouteMap({
+  routes,
+  unfulfilledOrders = [],
+  focusVehicleId,
+  focusTripNumber,
+  className,
+}: RouteMapProps) {
+  const visibleRoutes = useMemo(() => {
+    const byVehicle = focusVehicleId ? routes.filter((r) => r.vehicleId === focusVehicleId) : routes;
+    if (focusTripNumber === undefined) return byVehicle;
+    return byVehicle.map((r) => ({ ...r, trips: r.trips.filter((t) => t.tripNumber === focusTripNumber) }));
+  }, [routes, focusVehicleId, focusTripNumber]);
 
   const allPoints = useMemo(() => {
     const points: [number, number][] = [];
@@ -162,11 +196,10 @@ export default function RouteMap({ routes, unfulfilledOrders = [], focusVehicleI
                     )}
                     {trip.stops.map((stop, stopIndex) =>
                       stop.latitude !== null && stop.longitude !== null ? (
-                        <CircleMarker
+                        <Marker
                           key={stop.orderId}
-                          center={[stop.latitude, stop.longitude]}
-                          radius={6}
-                          pathOptions={{ color, fillColor: color, fillOpacity: 0.9 }}
+                          position={[stop.latitude, stop.longitude]}
+                          icon={numberedStopIcon(stopIndex + 1, color)}
                         >
                           <Popup>
                             <div className="text-xs">
@@ -176,7 +209,7 @@ export default function RouteMap({ routes, unfulfilledOrders = [], focusVehicleI
                               {stop.estimatedArrival && <div>ETA: {stop.estimatedArrival.slice(0, 5)}</div>}
                             </div>
                           </Popup>
-                        </CircleMarker>
+                        </Marker>
                       ) : null,
                     )}
                   </div>

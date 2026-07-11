@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 import RouteMapLoader from "@/components/map/route-map-loader";
 import { distributionApi, driversApi, simulationApi } from "@/lib/api";
 import type { Driver, DispatchPlan, VehicleRoute } from "@/lib/api";
@@ -33,6 +34,8 @@ export default function DriverPage() {
   const [planLoading, setPlanLoading] = useState(false);
   const [planError, setPlanError] = useState<string | null>(null);
 
+  const [selectedTrip, setSelectedTrip] = useState<number | null>(null);
+
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (!driverId) return;
@@ -54,6 +57,7 @@ export default function DriverPage() {
   async function loadPlan(current: Driver) {
     setPlanLoading(true);
     setPlanError(null);
+    setSelectedTrip(null);
     try {
       const result = current.simulationRunId
         ? await simulationApi.plan(current.simulationRunId)
@@ -126,29 +130,55 @@ export default function DriverPage() {
                 <Stat label="Avg load" value={`${myRoute.capacityUtilizationPercent.toFixed(0)}%`} />
               </div>
 
-              <RouteMapLoader routes={plan!.routes} focusVehicleId={myRoute.vehicleId} className="h-[28rem]" />
+              <RouteMapLoader
+                routes={plan!.routes}
+                focusVehicleId={myRoute.vehicleId}
+                focusTripNumber={selectedTrip ?? undefined}
+                className="h-[28rem]"
+              />
 
               <div className="space-y-2">
-                {myRoute.trips.map((trip) => (
-                  <div key={trip.tripNumber} className="rounded-lg border p-3">
-                    <div className="mb-2 flex items-center justify-between text-sm font-medium">
-                      <span>
-                        Trip {trip.tripNumber}: {trip.departureTime.slice(0, 5)} → {trip.returnTime.slice(0, 5)}
-                      </span>
-                      <span className="text-muted-foreground">
-                        {trip.loadedWeightKg.toFixed(0)}kg · {trip.distanceKm.toFixed(1)}km
-                      </span>
-                    </div>
-                    <ol className="ml-4 list-decimal space-y-1 text-sm text-muted-foreground">
-                      {trip.stops.map((stop) => (
-                        <li key={stop.orderId}>
-                          <span className="text-foreground">{stop.buyerName}</span> — {stop.orderWeight}kg
-                          {stop.estimatedArrival && ` (ETA ${stop.estimatedArrival.slice(0, 5)})`}
-                        </li>
-                      ))}
-                    </ol>
-                  </div>
-                ))}
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-muted-foreground">
+                    {selectedTrip !== null ? "Showing trip " + selectedTrip + " on the map." : "Click a trip to show it alone on the map."}
+                  </p>
+                  {selectedTrip !== null && (
+                    <Button variant="ghost" size="sm" onClick={() => setSelectedTrip(null)}>
+                      Show all trips
+                    </Button>
+                  )}
+                </div>
+                {myRoute.trips.map((trip) => {
+                  const isSelected = selectedTrip === trip.tripNumber;
+                  return (
+                    <button
+                      key={trip.tripNumber}
+                      type="button"
+                      onClick={() => setSelectedTrip(isSelected ? null : trip.tripNumber)}
+                      className={cn(
+                        "w-full rounded-lg border p-3 text-left transition-colors hover:bg-muted/50",
+                        isSelected && "border-primary bg-primary/5",
+                      )}
+                    >
+                      <div className="mb-2 flex items-center justify-between text-sm font-medium">
+                        <span>
+                          Trip {trip.tripNumber}: {trip.departureTime.slice(0, 5)} → {trip.returnTime.slice(0, 5)}
+                        </span>
+                        <span className="text-muted-foreground">
+                          {trip.loadedWeightKg.toFixed(0)}kg · {trip.distanceKm.toFixed(1)}km
+                        </span>
+                      </div>
+                      <ol className="ml-4 list-decimal space-y-1 text-sm text-muted-foreground">
+                        {trip.stops.map((stop) => (
+                          <li key={stop.orderId}>
+                            <span className="text-foreground">{stop.buyerName}</span> — {stop.orderWeight}kg
+                            {stop.estimatedArrival && ` (ETA ${stop.estimatedArrival.slice(0, 5)})`}
+                          </li>
+                        ))}
+                      </ol>
+                    </button>
+                  );
+                })}
               </div>
             </>
           )}

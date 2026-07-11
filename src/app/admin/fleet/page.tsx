@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,6 +24,24 @@ import type { Driver, Vehicle, Warehouse } from "@/lib/api";
 
 const EMPTY_DRIVER_FORM = { name: "", phoneNumber: "", licenseNumber: "", homeWarehouseId: "" };
 const EMPTY_VEHICLE_FORM = { plateNumber: "", type: "", capacityKg: "", homeWarehouseId: "" };
+
+function groupByParish<T extends { homeWarehouseId: string | null }>(
+  items: T[],
+  parishByWarehouseId: Map<string, string>,
+): [string, T[]][] {
+  const groups = new Map<string, T[]>();
+  for (const item of items) {
+    const parish = (item.homeWarehouseId && parishByWarehouseId.get(item.homeWarehouseId)) || "Unassigned";
+    const existing = groups.get(parish);
+    if (existing) existing.push(item);
+    else groups.set(parish, [item]);
+  }
+  return Array.from(groups.entries()).sort(([a], [b]) => {
+    if (a === "Unassigned") return 1;
+    if (b === "Unassigned") return -1;
+    return a.localeCompare(b);
+  });
+}
 
 /**
  * UIRB-FE-A6. Drivers and vehicles, list/create. Confirmed live against
@@ -50,11 +68,28 @@ export default function AdminFleetPage() {
   useEffect(() => {
     const controller = new AbortController();
     warehousesApi
-      .list({ status: "Active" }, controller.signal)
+      .list(undefined, controller.signal)
       .then(setWarehouses)
       .catch(() => {});
     return () => controller.abort();
   }, []);
+
+  // homeWarehouseId -> parish, for grouping drivers/vehicles below. Falls
+  // back to "Unassigned" for drivers/vehicles with no home warehouse set.
+  const parishByWarehouseId = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const w of warehouses) map.set(w.id, w.parish);
+    return map;
+  }, [warehouses]);
+
+  const driversByParish = useMemo(
+    () => groupByParish(drivers, parishByWarehouseId),
+    [drivers, parishByWarehouseId],
+  );
+  const vehiclesByParish = useMemo(
+    () => groupByParish(vehicles, parishByWarehouseId),
+    [vehicles, parishByWarehouseId],
+  );
 
   function loadDrivers() {
     setDriversLoading(true);
@@ -201,26 +236,35 @@ export default function AdminFleetPage() {
             ) : drivers.length === 0 ? (
               <p className="py-4 text-sm text-muted-foreground">No drivers yet.</p>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Phone</TableHead>
-                    <TableHead>License number</TableHead>
-                    <TableHead>Home warehouse</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {drivers.map((d) => (
-                    <TableRow key={d.id}>
-                      <TableCell className="font-medium">{d.name}</TableCell>
-                      <TableCell>{d.phoneNumber}</TableCell>
-                      <TableCell>{d.licenseNumber}</TableCell>
-                      <TableCell>{d.homeWarehouseName ?? "—"}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <div className="space-y-6">
+                {driversByParish.map(([parish, parishDrivers]) => (
+                  <div key={parish}>
+                    <h3 className="mb-2 text-sm font-semibold text-muted-foreground">
+                      {parish} <span className="font-normal">({parishDrivers.length})</span>
+                    </h3>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Phone</TableHead>
+                          <TableHead>License number</TableHead>
+                          <TableHead>Home warehouse</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {parishDrivers.map((d) => (
+                          <TableRow key={d.id}>
+                            <TableCell className="font-medium">{d.name}</TableCell>
+                            <TableCell>{d.phoneNumber}</TableCell>
+                            <TableCell>{d.licenseNumber}</TableCell>
+                            <TableCell>{d.homeWarehouseName ?? "—"}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ))}
+              </div>
             )}
           </CardContent>
         </Card>
@@ -302,26 +346,35 @@ export default function AdminFleetPage() {
             ) : vehicles.length === 0 ? (
               <p className="py-4 text-sm text-muted-foreground">No vehicles yet.</p>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Plate number</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Capacity</TableHead>
-                    <TableHead>Home warehouse</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {vehicles.map((v) => (
-                    <TableRow key={v.id}>
-                      <TableCell className="font-medium">{v.plateNumber}</TableCell>
-                      <TableCell>{v.type}</TableCell>
-                      <TableCell>{v.capacityKg !== null ? `${v.capacityKg.toLocaleString()} kg` : "—"}</TableCell>
-                      <TableCell>{v.homeWarehouseName ?? "—"}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <div className="space-y-6">
+                {vehiclesByParish.map(([parish, parishVehicles]) => (
+                  <div key={parish}>
+                    <h3 className="mb-2 text-sm font-semibold text-muted-foreground">
+                      {parish} <span className="font-normal">({parishVehicles.length})</span>
+                    </h3>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Plate number</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Capacity</TableHead>
+                          <TableHead>Home warehouse</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {parishVehicles.map((v) => (
+                          <TableRow key={v.id}>
+                            <TableCell className="font-medium">{v.plateNumber}</TableCell>
+                            <TableCell>{v.type}</TableCell>
+                            <TableCell>{v.capacityKg !== null ? `${v.capacityKg.toLocaleString()} kg` : "—"}</TableCell>
+                            <TableCell>{v.homeWarehouseName ?? "—"}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ))}
+              </div>
             )}
           </CardContent>
         </Card>

@@ -18,8 +18,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { cropsApi, warehousesApi } from "@/lib/api";
-import type { Crop, Warehouse, WarehouseCrop } from "@/lib/api";
+import { WarehouseCapacityHealth } from "@/components/dashboard/warehouse-capacity-health";
+import { analyticsApi, cropsApi, warehousesApi } from "@/lib/api";
+import type { Crop, Warehouse, WarehouseCrop, WarehouseUtilizationEntry } from "@/lib/api";
 
 interface WarehouseFormState {
   name: string;
@@ -39,6 +40,9 @@ export default function AdminWarehousesPage() {
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [loading, setLoading] = useState(true);
   const [crops, setCrops] = useState<Crop[]>([]);
+
+  const [utilization, setUtilization] = useState<WarehouseUtilizationEntry[]>([]);
+  const [utilizationLoading, setUtilizationLoading] = useState(true);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [createForm, setCreateForm] = useState<WarehouseFormState>(EMPTY_FORM);
@@ -67,6 +71,13 @@ export default function AdminWarehousesPage() {
     loadWarehouses();
     const controller = new AbortController();
     cropsApi.list(undefined, controller.signal).then(setCrops).catch(() => {});
+    analyticsApi
+      .getWarehouseUtilization(controller.signal)
+      .then(setUtilization)
+      .catch(() => {})
+      .finally(() => {
+        if (!controller.signal.aborted) setUtilizationLoading(false);
+      });
     return () => controller.abort();
   }, []);
   /* eslint-enable react-hooks/set-state-in-effect */
@@ -183,6 +194,20 @@ export default function AdminWarehousesPage() {
 
   return (
     <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Capacity health</CardTitle>
+          <CardDescription>Current stored weight vs. capacity, every warehouse.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {utilizationLoading && utilization.length === 0 ? (
+            <Skeleton className="h-48 w-full" />
+          ) : (
+            <WarehouseCapacityHealth data={utilization} />
+          )}
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader className="flex flex-row items-start justify-between gap-4">
           <div>
