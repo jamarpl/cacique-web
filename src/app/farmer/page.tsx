@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import { ArrowRight, CalendarCheck, Clock3, PackageCheck } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ErrorState } from "@/components/ui/error-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { useFarmerScopedResource } from "@/lib/api/hooks";
@@ -100,6 +101,8 @@ export default function FarmerDashboardPage() {
               <Skeleton className="h-10 w-full" />
               <Skeleton className="h-10 w-full" />
             </div>
+          ) : allDeliveries.error && recent.length === 0 ? (
+            <ErrorState onRetry={allDeliveries.refetch} />
           ) : recent.length === 0 ? (
             <p className="text-sm text-muted-foreground">No deliveries yet.</p>
           ) : (

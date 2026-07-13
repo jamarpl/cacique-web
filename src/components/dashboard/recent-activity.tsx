@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { CheckCircle2, PackagePlus, Truck } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ErrorState } from "@/components/ui/error-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { deliveriesApi, ordersApi } from "@/lib/api";
 import type { DeliverySummary, OrderSummary } from "@/lib/api";
@@ -71,9 +72,12 @@ export function RecentActivity({ limit = 8 }: { limit?: number }) {
   const [orders, setOrders] = useState<OrderSummary[]>([]);
   const [deliveries, setDeliveries] = useState<DeliverySummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  function load() {
     const controller = new AbortController();
+    setLoading(true);
+    setError(null);
     Promise.all([
       ordersApi.list(undefined, controller.signal),
       deliveriesApi.list({ thisWeek: true }, controller.signal),
@@ -83,12 +87,21 @@ export function RecentActivity({ limit = 8 }: { limit?: number }) {
         setOrders(o);
         setDeliveries(d);
       })
-      .catch(() => {})
+      .catch(() => {
+        if (!controller.signal.aborted) setError("Couldn't load recent activity.");
+      })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
       });
+    return controller;
+  }
+
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    const controller = load();
     return () => controller.abort();
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const entries = useMemo(() => buildActivity(orders, deliveries).slice(0, limit), [orders, deliveries, limit]);
 
@@ -105,6 +118,8 @@ export function RecentActivity({ limit = 8 }: { limit?: number }) {
             <Skeleton className="h-8 w-full" />
             <Skeleton className="h-8 w-full" />
           </div>
+        ) : error && entries.length === 0 ? (
+          <ErrorState onRetry={load} />
         ) : entries.length === 0 ? (
           <p className="py-4 text-sm text-muted-foreground">No recent activity.</p>
         ) : (

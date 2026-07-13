@@ -17,6 +17,7 @@ import {
 } from "recharts";
 import { AlertTriangle, Trash2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ErrorState } from "@/components/ui/error-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { analyticsApi } from "@/lib/api";
 import type {
@@ -61,9 +62,12 @@ export default function AdminAnalyticsPage() {
   const [spoilage, setSpoilage] = useState<SpoilageResponse | null>(null);
   const [intakeTrend, setIntakeTrend] = useState<IntakeTrendEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  function load() {
     const controller = new AbortController();
+    setLoading(true);
+    setError(null);
     Promise.all([
       analyticsApi.getInventorySummary(controller.signal),
       analyticsApi.getRegionalProduction(controller.signal),
@@ -81,12 +85,21 @@ export default function AdminAnalyticsPage() {
         setSpoilage(spoil);
         setIntakeTrend(trend);
       })
-      .catch(() => {})
+      .catch(() => {
+        if (!controller.signal.aborted) setError("Couldn't load analytics.");
+      })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
       });
+    return controller;
+  }
+
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    const controller = load();
     return () => controller.abort();
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   if (loading) {
     return (
@@ -96,6 +109,10 @@ export default function AdminAnalyticsPage() {
         ))}
       </div>
     );
+  }
+
+  if (error && inventory === null) {
+    return <ErrorState onRetry={load} />;
   }
 
   return (

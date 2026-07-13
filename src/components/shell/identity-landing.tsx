@@ -1,4 +1,4 @@
-import { Ship } from "lucide-react";
+import { House } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { IdentitySelectorForm } from "./identity-selector-form";
 
@@ -20,7 +20,7 @@ export function IdentityLanding() {
       <div className="relative flex flex-col items-center gap-6">
         <div className="flex items-center gap-2.5 text-sidebar-foreground">
           <span className="flex size-10 items-center justify-center rounded-xl bg-sidebar-primary text-sidebar-primary-foreground">
-            <Ship className="size-5" />
+            <House className="size-5" />
           </span>
           <div className="leading-tight">
             <div className="font-heading text-lg font-semibold tracking-wide">Cacique</div>

@@ -14,10 +14,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ErrorState } from "@/components/ui/error-state";
 import { WarehouseCapacityHealth } from "@/components/dashboard/warehouse-capacity-health";
 import { analyticsApi, cropsApi, warehousesApi } from "@/lib/api";
 import type { Crop, Warehouse, WarehouseCrop, WarehouseUtilizationEntry } from "@/lib/api";
@@ -39,6 +41,7 @@ const EMPTY_FORM: WarehouseFormState = { name: "", parish: "", address: "", capa
 export default function AdminWarehousesPage() {
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [loading, setLoading] = useState(true);
+  const [warehousesError, setWarehousesError] = useState<string | null>(null);
   const [crops, setCrops] = useState<Crop[]>([]);
 
   const [utilization, setUtilization] = useState<WarehouseUtilizationEntry[]>([]);
@@ -59,10 +62,11 @@ export default function AdminWarehousesPage() {
 
   function loadWarehouses() {
     setLoading(true);
+    setWarehousesError(null);
     warehousesApi
       .list()
       .then(setWarehouses)
-      .catch(() => {})
+      .catch(() => setWarehousesError("Couldn't load warehouses."))
       .finally(() => setLoading(false));
   }
 
@@ -271,6 +275,8 @@ export default function AdminWarehousesPage() {
               <Skeleton className="h-10 w-full" />
               <Skeleton className="h-10 w-full" />
             </div>
+          ) : warehousesError && warehouses.length === 0 ? (
+            <ErrorState onRetry={loadWarehouses} />
           ) : warehouses.length === 0 ? (
             <p className="py-4 text-sm text-muted-foreground">No warehouses yet.</p>
           ) : (
@@ -375,10 +381,9 @@ export default function AdminWarehousesPage() {
             <div className="max-h-72 space-y-1 overflow-y-auto rounded-lg border p-2">
               {crops.map((crop) => (
                 <label key={crop.id} className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted/50">
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     checked={cropsSelection.has(crop.id)}
-                    onChange={() => toggleCropSelection(crop.id)}
+                    onCheckedChange={() => toggleCropSelection(crop.id)}
                   />
                   {crop.name}
                 </label>

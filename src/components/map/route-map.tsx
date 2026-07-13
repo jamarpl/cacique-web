@@ -148,7 +148,7 @@ export default function RouteMap({
   const warehousesById = new Map<string, [number, number]>();
 
   return (
-    <div className={`overflow-hidden rounded-lg border ${className ?? "h-96"}`}>
+    <div className={`isolate relative z-0 overflow-hidden rounded-lg border ${className ?? "h-96"}`}>
       <MapContainer center={allPoints[0]} zoom={11} scrollWheelZoom={true} style={{ height: "100%", width: "100%" }}>
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

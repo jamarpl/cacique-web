@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useActingIdentity } from "@/lib/identity/acting-identity-context";
 import { IdentityLanding } from "@/components/shell/identity-landing";
+import { RouteLoading } from "@/components/shell/route-loading";
 
 /**
  * Root route (UIRB-FE-3): redirects to whichever role is currently acting
@@ -23,8 +24,9 @@ export default function RootPage() {
 
   if (!isHydrated || role === "farmer" || role === "admin" || role === "driver") {
     // Either still reading localStorage, or a redirect above is about to
-    // fire — render nothing rather than a flash of the landing page.
-    return null;
+    // fire — render a loading placeholder rather than a flash of the
+    // landing page (or a flash of blank background before it).
+    return <RouteLoading />;
   }
 
   return <IdentityLanding />;

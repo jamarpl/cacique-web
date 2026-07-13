@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ErrorState } from "@/components/ui/error-state";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -137,6 +138,8 @@ export default function InventoryPage() {
               <Skeleton className="h-10 w-full" />
               <Skeleton className="h-10 w-full" />
             </div>
+          ) : inventory.error && crates.length === 0 ? (
+            <ErrorState onRetry={inventory.refetch} />
           ) : crates.length === 0 ? (
             <p className="py-4 text-sm text-muted-foreground">No crates match these filters.</p>
           ) : (

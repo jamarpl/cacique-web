@@ -7,12 +7,12 @@ import {
   BarChart3,
   Boxes,
   FlaskConical,
+  House,
   LayoutDashboard,
   Menu,
   Navigation,
   PackagePlus,
   Route,
-  Ship,
   Sprout,
   Truck,
   Users,
@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { IdentityBadge } from "./identity-badge";
 import { IdentitySwitcher } from "./identity-switcher";
+import { ThemeToggle } from "./theme-toggle";
 import type { NavIconName, NavItem } from "./nav-config";
 import { useState } from "react";
 
@@ -65,7 +66,7 @@ export function AppShell({ roleLabel, navItems, children }: AppShellProps) {
       <aside className="hidden w-64 shrink-0 flex-col bg-sidebar text-sidebar-foreground md:flex">
         <div className="flex h-16 items-center gap-2 px-5">
           <span className="flex size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-            <Ship className="size-4.5" />
+            <House className="size-4.5" />
           </span>
           <div className="leading-tight">
             <div className="font-heading text-sm font-semibold tracking-wide">Cacique</div>
@@ -100,7 +101,7 @@ export function AppShell({ roleLabel, navItems, children }: AppShellProps) {
               <SheetContent side="left" className="w-72 border-sidebar-border bg-sidebar p-0 text-sidebar-foreground">
                 <SheetHeader className="flex-row items-center gap-2 border-b border-sidebar-border">
                   <span className="flex size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                    <Ship className="size-4.5" />
+                    <House className="size-4.5" />
                   </span>
                   <SheetTitle className="text-sidebar-foreground">
                     Cacique <span className="font-normal text-sidebar-foreground/60">/ {roleLabel}</span>
@@ -126,6 +127,7 @@ export function AppShell({ roleLabel, navItems, children }: AppShellProps) {
             <div className="ml-auto flex items-center gap-2">
               <IdentityBadge />
               <IdentitySwitcher />
+              <ThemeToggle />
             </div>
           </div>
         </header>

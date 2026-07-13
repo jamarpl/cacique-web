@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ErrorState } from "@/components/ui/error-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { deliveriesApi, ordersApi, warehousesApi } from "@/lib/api";
@@ -46,25 +47,40 @@ function orderStatusVariant(status: string): "default" | "secondary" | "outline"
 export default function AdminDistributionPage() {
   const [orders, setOrders] = useState<OrderSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [ordersError, setOrdersError] = useState<string | null>(null);
 
   const [todayDeliveries, setTodayDeliveries] = useState<DeliverySummary[]>([]);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [parishLoading, setParishLoading] = useState(true);
+  const [parishError, setParishError] = useState<string | null>(null);
 
-  useEffect(() => {
+  function loadOrders() {
     const controller = new AbortController();
+    setLoading(true);
+    setOrdersError(null);
     ordersApi
       .list(undefined, controller.signal)
       .then(setOrders)
-      .catch(() => {})
+      .catch(() => {
+        if (!controller.signal.aborted) setOrdersError("Couldn't load orders.");
+      })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
       });
+    return controller;
+  }
+
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    const controller = loadOrders();
     return () => controller.abort();
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
-  useEffect(() => {
+  function loadParishSummary() {
     const controller = new AbortController();
+    setParishLoading(true);
+    setParishError(null);
     Promise.all([
       deliveriesApi.list({ thisWeek: true }, controller.signal),
       warehousesApi.list(undefined, controller.signal),
@@ -74,12 +90,21 @@ export default function AdminDistributionPage() {
         setTodayDeliveries(deliveries.filter((d) => isToday(d.departureTime)));
         setWarehouses(wh);
       })
-      .catch(() => {})
+      .catch(() => {
+        if (!controller.signal.aborted) setParishError("Couldn't load today's distribution.");
+      })
       .finally(() => {
         if (!controller.signal.aborted) setParishLoading(false);
       });
+    return controller;
+  }
+
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    const controller = loadParishSummary();
     return () => controller.abort();
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const parishSummary = useMemo(() => {
     const parishByWarehouseId = new Map(warehouses.map((w) => [w.id, w.parish]));
@@ -115,6 +140,8 @@ export default function AdminDistributionPage() {
               <Skeleton className="h-20 w-36" />
               <Skeleton className="h-20 w-36" />
             </div>
+          ) : parishError && parishSummary.length === 0 ? (
+            <ErrorState onRetry={loadParishSummary} />
           ) : parishSummary.length === 0 ? (
             <p className="py-2 text-sm text-muted-foreground">No deliveries departing today.</p>
           ) : (
@@ -148,6 +175,8 @@ export default function AdminDistributionPage() {
               <Skeleton className="h-10 w-full" />
               <Skeleton className="h-10 w-full" />
             </div>
+          ) : ordersError && orders.length === 0 ? (
+            <ErrorState onRetry={loadOrders} />
           ) : orders.length === 0 ? (
             <p className="py-4 text-sm text-muted-foreground">No orders yet.</p>
           ) : (

@@ -14,6 +14,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { ErrorState } from "@/components/ui/error-state";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -193,6 +194,8 @@ export default function CustomersPage() {
               <Skeleton className="h-10 w-full" />
               <Skeleton className="h-10 w-full" />
             </div>
+          ) : buyers.error && customers.length === 0 ? (
+            <ErrorState onRetry={buyers.refetch} />
           ) : customers.length === 0 ? (
             <p className="py-4 text-sm text-muted-foreground">No customers yet — add your first one above.</p>
           ) : (

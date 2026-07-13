@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ErrorState } from "@/components/ui/error-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cropsApi } from "@/lib/api";
@@ -15,18 +16,30 @@ import type { Crop } from "@/lib/api";
 export default function AdminCropsPage() {
   const [crops, setCrops] = useState<Crop[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  function load() {
     const controller = new AbortController();
+    setLoading(true);
+    setError(null);
     cropsApi
       .list(undefined, controller.signal)
       .then(setCrops)
-      .catch(() => {})
+      .catch(() => {
+        if (!controller.signal.aborted) setError("Couldn't load crops.");
+      })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
       });
+    return controller;
+  }
+
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    const controller = load();
     return () => controller.abort();
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   return (
     <Card>
@@ -41,6 +54,8 @@ export default function AdminCropsPage() {
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-10 w-full" />
           </div>
+        ) : error && crops.length === 0 ? (
+          <ErrorState onRetry={load} />
         ) : crops.length === 0 ? (
           <p className="py-4 text-sm text-muted-foreground">No crops in the catalog.</p>
         ) : (

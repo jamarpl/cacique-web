@@ -3,6 +3,7 @@
 import { useEffect, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useActingIdentity, type ActingRole } from "@/lib/identity/acting-identity-context";
+import { RouteLoading } from "./route-loading";
 
 /**
  * Redirects to `/` (the role-selection landing) if the acting identity
@@ -23,7 +24,7 @@ export function RoleGuard({ expected, children }: { expected: ActingRole; childr
   }, [role, isHydrated, expected, router]);
 
   if (!isHydrated || role !== expected) {
-    return null;
+    return <RouteLoading />;
   }
 
   return <>{children}</>;

@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ErrorState } from "@/components/ui/error-state";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -114,6 +115,8 @@ export default function TransfersPage() {
         <CardContent>
           {inventory.loading && crates.length === 0 ? (
             <Skeleton className="h-48 w-full" />
+          ) : inventory.error && crates.length === 0 ? (
+            <ErrorState onRetry={inventory.refetch} />
           ) : (
             <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2 sm:col-span-2">

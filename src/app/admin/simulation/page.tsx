@@ -13,11 +13,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ErrorState } from "@/components/ui/error-state";
 import { DispatchPlanDetail } from "@/components/dispatch/dispatch-plan-detail";
 import { WeekSummary } from "@/components/dispatch/week-summary";
 import { simulationApi, warehousesApi } from "@/lib/api";
@@ -44,6 +46,7 @@ const EMPTY_FORM = {
  */
 export default function AdminSimulationPage() {
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+  const [warehousesError, setWarehousesError] = useState<string | null>(null);
   const [runs, setRuns] = useState<SimulationRun[]>([]);
   const [runsLoading, setRunsLoading] = useState(true);
 
@@ -74,13 +77,21 @@ export default function AdminSimulationPage() {
       .finally(() => setRunsLoading(false));
   }
 
-  /* eslint-disable react-hooks/set-state-in-effect */
-  useEffect(() => {
+  function loadWarehouses() {
     const controller = new AbortController();
+    setWarehousesError(null);
     warehousesApi
       .list({ status: "Active" }, controller.signal)
       .then(setWarehouses)
-      .catch(() => {});
+      .catch(() => {
+        if (!controller.signal.aborted) setWarehousesError("Couldn't load parishes.");
+      });
+    return controller;
+  }
+
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    const controller = loadWarehouses();
     loadRuns();
     return () => controller.abort();
   }, []);
@@ -245,6 +256,9 @@ export default function AdminSimulationPage() {
                         ))}
                       </SelectContent>
                     </Select>
+                    {warehousesError && parishes.length === 0 && (
+                      <ErrorState onRetry={loadWarehouses} className="mt-1" />
+                    )}
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
@@ -307,11 +321,10 @@ export default function AdminSimulationPage() {
                     </div>
                   </div>
                   <label className="flex items-start gap-2 rounded-lg border p-3 text-sm">
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       checked={form.generateCapacitySpikeTest}
-                      onChange={(e) => setForm((f) => ({ ...f, generateCapacitySpikeTest: e.target.checked }))}
-                      className="mt-0.5 size-4 rounded border-input"
+                      onCheckedChange={(checked) => setForm((f) => ({ ...f, generateCapacitySpikeTest: checked === true }))}
+                      className="mt-0.5"
                     />
                     <span>
                       <span className="font-medium">Generate as &quot;I&apos;ve Got This&quot; test</span>
@@ -369,7 +382,7 @@ export default function AdminSimulationPage() {
                     <TableCell>{run.customerCount}</TableCell>
                     <TableCell>{run.orderCount}</TableCell>
                     <TableCell>{new Date(run.createdAtUtc).toLocaleString()}</TableCell>
-                    <TableCell className="flex gap-3">
+                    <TableCell className="flex flex-wrap gap-3">
                       <button
                         type="button"
                         className="text-primary underline-offset-4 hover:underline disabled:opacity-50"

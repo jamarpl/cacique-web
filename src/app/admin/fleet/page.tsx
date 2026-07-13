@@ -19,6 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ErrorState } from "@/components/ui/error-state";
 import { driversApi, vehiclesApi, warehousesApi } from "@/lib/api";
 import type { Driver, Vehicle, Warehouse } from "@/lib/api";
 
@@ -53,12 +54,14 @@ function groupByParish<T extends { homeWarehouseId: string | null }>(
 export default function AdminFleetPage() {
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [driversLoading, setDriversLoading] = useState(true);
+  const [driversError, setDriversError] = useState<string | null>(null);
   const [driverOpen, setDriverOpen] = useState(false);
   const [driverForm, setDriverForm] = useState(EMPTY_DRIVER_FORM);
   const [driverSubmitting, setDriverSubmitting] = useState(false);
 
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [vehiclesLoading, setVehiclesLoading] = useState(true);
+  const [vehiclesError, setVehiclesError] = useState<string | null>(null);
   const [vehicleOpen, setVehicleOpen] = useState(false);
   const [vehicleForm, setVehicleForm] = useState(EMPTY_VEHICLE_FORM);
   const [vehicleSubmitting, setVehicleSubmitting] = useState(false);
@@ -93,12 +96,22 @@ export default function AdminFleetPage() {
 
   function loadDrivers() {
     setDriversLoading(true);
-    driversApi.list().then(setDrivers).catch(() => {}).finally(() => setDriversLoading(false));
+    setDriversError(null);
+    driversApi
+      .list()
+      .then(setDrivers)
+      .catch(() => setDriversError("Couldn't load drivers."))
+      .finally(() => setDriversLoading(false));
   }
 
   function loadVehicles() {
     setVehiclesLoading(true);
-    vehiclesApi.list().then(setVehicles).catch(() => {}).finally(() => setVehiclesLoading(false));
+    setVehiclesError(null);
+    vehiclesApi
+      .list()
+      .then(setVehicles)
+      .catch(() => setVehiclesError("Couldn't load vehicles."))
+      .finally(() => setVehiclesLoading(false));
   }
 
   /* eslint-disable react-hooks/set-state-in-effect */
@@ -233,6 +246,8 @@ export default function AdminFleetPage() {
                 <Skeleton className="h-10 w-full" />
                 <Skeleton className="h-10 w-full" />
               </div>
+            ) : driversError && drivers.length === 0 ? (
+              <ErrorState onRetry={loadDrivers} />
             ) : drivers.length === 0 ? (
               <p className="py-4 text-sm text-muted-foreground">No drivers yet.</p>
             ) : (
@@ -343,6 +358,8 @@ export default function AdminFleetPage() {
                 <Skeleton className="h-10 w-full" />
                 <Skeleton className="h-10 w-full" />
               </div>
+            ) : vehiclesError && vehicles.length === 0 ? (
+              <ErrorState onRetry={loadVehicles} />
             ) : vehicles.length === 0 ? (
               <p className="py-4 text-sm text-muted-foreground">No vehicles yet.</p>
             ) : (

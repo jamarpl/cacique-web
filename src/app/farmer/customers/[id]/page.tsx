@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -206,12 +207,7 @@ export default function CustomerDetailPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={autoModeEnabled}
-              onChange={(e) => setAutoModeEnabled(e.target.checked)}
-              className="size-4 rounded border-input"
-            />
+            <Checkbox checked={autoModeEnabled} onCheckedChange={(checked) => setAutoModeEnabled(checked === true)} />
             Enable smart scheduling for this customer
           </label>
 
@@ -254,12 +250,7 @@ export default function CustomerDetailPage() {
                 <div className="flex flex-wrap gap-3">
                   {DAYS_OF_WEEK.map((day) => (
                     <label key={day} className="flex items-center gap-1.5 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={blackoutDays.has(day)}
-                        onChange={() => toggleBlackoutDay(day)}
-                        className="size-4 rounded border-input"
-                      />
+                      <Checkbox checked={blackoutDays.has(day)} onCheckedChange={() => toggleBlackoutDay(day)} />
                       {day}
                     </label>
                   ))}

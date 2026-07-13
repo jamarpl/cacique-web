@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ErrorState } from "@/components/ui/error-state";
 import { farmersApi } from "@/lib/api";
 import type { Farmer } from "@/lib/api";
 
@@ -31,6 +32,7 @@ const EMPTY_FORM = { name: "", phone: "", email: "", parish: "", community: "", 
 export default function AdminFarmersPage() {
   const [farmers, setFarmers] = useState<Farmer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
@@ -38,10 +40,11 @@ export default function AdminFarmersPage() {
 
   function load() {
     setLoading(true);
+    setError(null);
     farmersApi
       .list()
       .then(setFarmers)
-      .catch(() => {})
+      .catch(() => setError("Couldn't load farmers."))
       .finally(() => setLoading(false));
   }
 
@@ -150,6 +153,8 @@ export default function AdminFarmersPage() {
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-10 w-full" />
           </div>
+        ) : error && farmers.length === 0 ? (
+          <ErrorState onRetry={load} />
         ) : farmers.length === 0 ? (
           <p className="py-4 text-sm text-muted-foreground">No farmers registered yet.</p>
         ) : (

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ErrorState } from "@/components/ui/error-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useFarmerScopedResource } from "@/lib/api/hooks";
@@ -48,6 +49,8 @@ export default function DeliveriesListPage() {
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-10 w-full" />
           </div>
+        ) : deliveries.error && rows.length === 0 ? (
+          <ErrorState onRetry={deliveries.refetch} />
         ) : rows.length === 0 ? (
           <p className="py-4 text-sm text-muted-foreground">No deliveries yet.</p>
         ) : (

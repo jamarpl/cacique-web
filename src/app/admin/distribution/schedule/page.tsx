@@ -6,9 +6,11 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { deliveriesApi, driversApi, inventoryApi, ordersApi, vehiclesApi } from "@/lib/api";
 import type { Driver, InventoryCrate, OrderSummary, Vehicle } from "@/lib/api";
 
@@ -120,7 +122,11 @@ export default function AdminScheduleDeliveryPage() {
       </CardHeader>
       <CardContent>
         {loading ? (
-          <p className="text-sm text-muted-foreground">Loading…</p>
+          <div className="space-y-4">
+            <Skeleton className="h-9 w-full sm:w-96" />
+            <Skeleton className="h-40 w-full" />
+            <Skeleton className="h-9 w-32" />
+          </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
@@ -157,10 +163,9 @@ export default function AdminScheduleDeliveryPage() {
                       className="flex cursor-pointer items-center justify-between gap-4 border-b px-3 py-2 text-sm last:border-b-0 hover:bg-muted/50"
                     >
                       <span className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           checked={selectedCrateIds.has(crate.id)}
-                          onChange={() => toggleCrate(crate.id)}
+                          onCheckedChange={() => toggleCrate(crate.id)}
                         />
                         <span>
                           {crate.cropName} · {crate.weight}kg · Grade {crate.grade} · {crate.farmerName}
